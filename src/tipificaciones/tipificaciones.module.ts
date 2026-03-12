@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tipificacion } from './entities/tipificacion.entity.js';
 import { TipificacionesRepository } from './tipificaciones.repository.js';
 import { TipificacionesService } from './tipificaciones.service.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tipificacion])],
+  imports: [TypeOrmModule.forFeature([Tipificacion]), HttpModule],
   providers: [TipificacionesRepository, TipificacionesService],
   exports: [TipificacionesService],
 })
