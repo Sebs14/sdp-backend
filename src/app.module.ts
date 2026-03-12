@@ -12,6 +12,9 @@ import { CentroEscolar } from './centros-escolares/entities/centro-escolar.entit
 import { Ticket } from './tickets/entities/ticket.entity.js';
 import { Tipificacion } from './tipificaciones/entities/tipificacion.entity.js';
 import { TipificacionesModule } from './tipificaciones/tipificaciones.module.js';
+import { AgenteEspecializado } from './agentes-especializados/entities/agente-especializado.entity.js';
+import { AgentesEspecializadosModule } from './agentes-especializados/agentes-especializados.module.js';
+import { VoiceModule } from './voice/voice.module.js';
 
 @Module({
   imports: [
@@ -28,7 +31,7 @@ import { TipificacionesModule } from './tipificaciones/tipificaciones.module.js'
         username: config.get<string>('database.username'),
         password: config.get<string>('database.password'),
         database: config.get<string>('database.database'),
-        entities: [CentroEscolar, Ticket, Tipificacion],
+        entities: [CentroEscolar, Ticket, Tipificacion, AgenteEspecializado],
         synchronize: config.get<string>('nodeEnv') === 'development',
       }),
     }),
@@ -39,6 +42,8 @@ import { TipificacionesModule } from './tipificaciones/tipificaciones.module.js'
     CentrosEscolaresModule,
     TicketsModule,
     TipificacionesModule,
+    AgentesEspecializadosModule,
+    VoiceModule,
   ],
 })
 export class AppModule { }

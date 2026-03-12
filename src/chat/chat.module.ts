@@ -9,5 +9,6 @@ import { FunctionsModule } from '../functions/functions.module.js';
   imports: [GrokModule, SessionModule, FunctionsModule],
   controllers: [ChatController],
   providers: [ChatService],
+  exports: [ChatService],
 })
-export class ChatModule {}
+export class ChatModule { }
