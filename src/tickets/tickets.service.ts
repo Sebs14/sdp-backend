@@ -6,6 +6,7 @@ import {
   DistributionInput,
   DistributionResult,
 } from './distribution-rules.service.js';
+import { ServiceDeskService } from './service-desk.service.js';
 
 @Injectable()
 export class TicketsService {
@@ -14,6 +15,7 @@ export class TicketsService {
   constructor(
     private readonly ticketsRepository: TicketsRepository,
     private readonly distributionRules: DistributionRulesService,
+    private readonly serviceDeskService: ServiceDeskService,
   ) { }
 
   async crearTicket(datos: Record<string, unknown>): Promise<{
@@ -74,6 +76,11 @@ export class TicketsService {
     });
 
     this.logger.log(`Ticket creado: ${ticket.ticket_numero}`);
+
+    // Enviar a ManageEngine ServiceDesk Plus (fire-and-forget)
+    this.serviceDeskService.crearRequest(datos).catch((err) => {
+      this.logger.error('Error enviando a ServiceDesk (no bloqueante)', err);
+    });
 
     return {
       ticket_id: ticket.ticket_numero,
