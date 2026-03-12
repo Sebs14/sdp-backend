@@ -8,9 +8,15 @@ import { EscalarHumanoService } from './escalar-humano.service.js';
 import { CentrosEscolaresModule } from '../centros-escolares/centros-escolares.module.js';
 import { TicketsModule } from '../tickets/tickets.module.js';
 import { TipificacionesModule } from '../tipificaciones/tipificaciones.module.js';
+import { AgentesEspecializadosModule } from '../agentes-especializados/agentes-especializados.module.js';
 
 @Module({
-  imports: [CentrosEscolaresModule, TicketsModule, TipificacionesModule],
+  imports: [
+    CentrosEscolaresModule,
+    TicketsModule,
+    TipificacionesModule,
+    AgentesEspecializadosModule,
+  ],
   providers: [
     FunctionsService,
     VerificarCentroService,

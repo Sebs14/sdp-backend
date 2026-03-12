@@ -13,6 +13,31 @@ export class CrearTicketService {
     // The agent may send { payload: {...} } or flat fields directly
     const p = (args.payload as Record<string, unknown>) ?? args;
 
+    // Validate minimum required fields
+    const nombre = p.nombre_solicitante as string;
+    const codigo = p.codigo_centro as string;
+    const tip1 = p.tipification1 ?? p.categoria;
+    const desc = p.description ?? p.descripcion;
+
+    if (!nombre || !codigo || !tip1) {
+      this.logger.warn(
+        `Ticket missing required fields — nombre: ${nombre}, codigo: ${codigo}, tip1: ${tip1}`,
+      );
+      return JSON.stringify({
+        error: true,
+        mensaje:
+          'No se puede crear el ticket. Faltan datos obligatorios: ' +
+          [
+            !nombre && 'nombre del solicitante',
+            !codigo && 'código del centro escolar',
+            !tip1 && 'clasificación del problema',
+          ]
+            .filter(Boolean)
+            .join(', ') +
+          '.',
+      });
+    }
+
     // Construir datos para el ticket con campos de distribución
     const datos: Record<string, unknown> = {
       nombre_solicitante: p.nombre_solicitante,
@@ -41,7 +66,19 @@ export class CrearTicketService {
       session_id: p.session_id,
     };
 
-    const resultado = await this.ticketsService.crearTicket(datos);
-    return JSON.stringify(resultado);
+    try {
+      const resultado = await this.ticketsService.crearTicket(datos);
+      return JSON.stringify(resultado);
+    } catch (error) {
+      this.logger.error(
+        'Error al crear ticket',
+        error instanceof Error ? error.message : error,
+      );
+      return JSON.stringify({
+        error: true,
+        mensaje:
+          'Error al crear el ticket en la base de datos. Por favor intente nuevamente.',
+      });
+    }
   }
 }

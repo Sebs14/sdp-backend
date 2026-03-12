@@ -8,13 +8,14 @@ export class ClasificarTipificacionService {
   constructor(private readonly tipificacionesService: TipificacionesService) { }
 
   async execute(args: Record<string, unknown>): Promise<string> {
-    // The agent may use different field names
+    // The agent may use different field names, fall back to conversation context
     const descripcion =
       (args.descripcion_problema as string) ??
       (args.descripcion as string) ??
       (args.description as string) ??
       (args.query as string) ??
       (args.problema as string) ??
+      (args._user_message as string) ??
       '';
     this.logger.log(`Clasificando tipificación: ${descripcion}`);
 
