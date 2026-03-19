@@ -15,7 +15,7 @@ import { VoiceService } from './voice.service.js';
 export class VoiceController {
   private readonly logger = new Logger(VoiceController.name);
 
-  constructor(private readonly voiceService: VoiceService) {}
+  constructor(private readonly voiceService: VoiceService) { }
 
   @Post('webhook')
   @ApiOperation({

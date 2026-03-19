@@ -5,7 +5,7 @@ import { TicketsService } from '../tickets/tickets.service.js';
 export class CrearTicketService {
   private readonly logger = new Logger(CrearTicketService.name);
 
-  constructor(private readonly ticketsService: TicketsService) {}
+  constructor(private readonly ticketsService: TicketsService) { }
 
   async execute(args: Record<string, unknown>): Promise<string> {
     this.logger.log('Creando ticket en SDP');

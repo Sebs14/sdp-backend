@@ -5,7 +5,7 @@ import { AgentesEspecializadosService } from '../agentes-especializados/agentes-
 export class TransferirAgenteService {
   private readonly logger = new Logger(TransferirAgenteService.name);
 
-  constructor(private readonly agentesService: AgentesEspecializadosService) {}
+  constructor(private readonly agentesService: AgentesEspecializadosService) { }
 
   async execute(args: Record<string, unknown>): Promise<string> {
     const payload = (args.payload as Record<string, unknown>) ?? args;

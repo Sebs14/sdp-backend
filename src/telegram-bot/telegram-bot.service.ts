@@ -58,8 +58,8 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 
       await ctx.reply(
         '¡Bienvenido al Sistema de Despacho de Problemas (SDP) del MINED! 🏫\n\n' +
-          'Puedes escribirme tu consulta o problema y te ayudaré a canalizarlo.\n\n' +
-          'Escribe /nueva para reiniciar la conversación en cualquier momento.',
+        'Puedes escribirme tu consulta o problema y te ayudaré a canalizarlo.\n\n' +
+        'Escribe /nueva para reiniciar la conversación en cualquier momento.',
       );
     });
 

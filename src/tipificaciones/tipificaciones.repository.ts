@@ -8,7 +8,7 @@ export class TipificacionesRepository {
   constructor(
     @InjectRepository(Tipificacion)
     private readonly repo: Repository<Tipificacion>,
-  ) {}
+  ) { }
 
   async findAll(): Promise<Tipificacion[]> {
     return this.repo.find({ where: { activo: true } });

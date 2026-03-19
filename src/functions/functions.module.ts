@@ -25,4 +25,4 @@ import { AgentesEspecializadosModule } from '../agentes-especializados/agentes-e
   ],
   exports: [FunctionsService],
 })
-export class FunctionsModule {}
+export class FunctionsModule { }

@@ -48,4 +48,4 @@ import { TelegramBotModule } from './telegram-bot/telegram-bot.module.js';
     VoiceModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

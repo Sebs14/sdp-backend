@@ -21,7 +21,7 @@ export class ChatService {
     private readonly grokService: GrokService,
     private readonly sessionService: SessionService,
     private readonly functionsService: FunctionsService,
-  ) {}
+  ) { }
 
   /**
    * Convert internal history messages to xAI Support Agent format.
@@ -181,8 +181,8 @@ REGLAS:
       // Build re-query messages: assistant entry + tool results
       const assistantContent = Array.isArray(agentMsg.content)
         ? (agentMsg.content as Array<{ text: string }>).filter((item) =>
-            item.text?.trim(),
-          )
+          item.text?.trim(),
+        )
         : typeof agentMsg.content === 'string' && agentMsg.content.trim()
           ? [{ text: agentMsg.content }]
           : [];

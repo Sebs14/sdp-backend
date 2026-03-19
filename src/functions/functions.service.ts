@@ -13,7 +13,7 @@ export class FunctionsService {
     private readonly clasificarTipificacion: ClasificarTipificacionService,
     private readonly crearTicket: CrearTicketService,
     private readonly transferirAgente: TransferirAgenteService,
-  ) {}
+  ) { }
 
   async execute(
     functionName: string,
