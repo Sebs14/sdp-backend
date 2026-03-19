@@ -71,8 +71,8 @@ export class VoiceService implements OnModuleInit {
    */
   private patchRealtimeSessionForXai(): void {
     const proto = openai.realtime.beta.RealtimeSession
-      .prototype as unknown as Record<string, unknown>;
-    const origSendEvent = proto['sendEvent'] as (cmd: unknown) => void;
+      .prototype as unknown as Record<string, (...args: unknown[]) => unknown>;
+    const origSendEvent = proto['sendEvent'] as (cmd: unknown) => unknown;
     if (!origSendEvent) return;
 
     const logger = this.logger;
@@ -91,9 +91,11 @@ export class VoiceService implements OnModuleInit {
         };
         logger.debug(`Patched session.update → ${JSON.stringify(event)}`);
       }
-      return origSendEvent.call(this, event);
+      return origSendEvent.call(this, event) as unknown;
     };
-    this.logger.log('Patched beta RealtimeSession.sendEvent for xAI compatibility');
+    this.logger.log(
+      'Patched beta RealtimeSession.sendEvent for xAI compatibility',
+    );
   }
 
   // ─── Webhook Parsing ────────────────────────────────────────────────────────
@@ -119,8 +121,7 @@ export class VoiceService implements OnModuleInit {
       teamId: (raw.team_id as string) ?? '',
       roomName: (raw.room_name as string) ?? '',
       dtmfEnabled: (raw.dtmf_enabled as boolean) ?? false,
-      participant:
-        (bodyData.participant as Record<string, unknown>) ?? {},
+      participant: (bodyData.participant as Record<string, unknown>) ?? {},
     };
   }
 
@@ -202,15 +203,28 @@ export class VoiceService implements OnModuleInit {
       // Wrap verificar_centro_escolar to capture centro data
       tools.verificar_centro_escolar = llm.tool({
         description: 'Verifica si existe un centro escolar por código o nombre',
-        parameters: z.object({
-          codigo_centro: z.string().optional().describe('Código del centro escolar'),
-          nombre_centro: z.string().optional().describe('Nombre del centro escolar'),
-        }).passthrough(),
+        parameters: z
+          .object({
+            codigo_centro: z
+              .string()
+              .optional()
+              .describe('Código del centro escolar'),
+            nombre_centro: z
+              .string()
+              .optional()
+              .describe('Nombre del centro escolar'),
+          })
+          .passthrough(),
         execute: async (args: Record<string, unknown>): Promise<string> => {
-          this.logger.log(`Tool call: verificar_centro_escolar(${JSON.stringify(args)})`);
-          const result = await this.functionsService.execute('verificar_centro_escolar', args);
+          this.logger.log(
+            `Tool call: verificar_centro_escolar(${JSON.stringify(args)})`,
+          );
+          const result = await this.functionsService.execute(
+            'verificar_centro_escolar',
+            args,
+          );
           try {
-            const parsed = JSON.parse(result);
+            const parsed = JSON.parse(result) as Record<string, unknown>;
             if (parsed.encontrado) {
               Object.assign(collectedData, {
                 codigo_centro: parsed.codigo,
@@ -220,24 +234,38 @@ export class VoiceService implements OnModuleInit {
                 distrito: parsed.distrito,
                 modalidad: parsed.modalidad,
               });
-              this.logger.log(`[${tag}] Collected centro: ${JSON.stringify(collectedData)}`);
+              this.logger.log(
+                `[${tag}] Collected centro: ${JSON.stringify(collectedData)}`,
+              );
             }
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
           return result;
         },
       });
 
       // Wrap clasificar_tipificacion to capture classification data
       tools.clasificar_tipificacion = llm.tool({
-        description: 'Clasifica la tipificación del problema reportado por el usuario',
-        parameters: z.object({
-          descripcion_problema: z.string().describe('Descripción del problema reportado'),
-        }).passthrough(),
+        description:
+          'Clasifica la tipificación del problema reportado por el usuario',
+        parameters: z
+          .object({
+            descripcion_problema: z
+              .string()
+              .describe('Descripción del problema reportado'),
+          })
+          .passthrough(),
         execute: async (args: Record<string, unknown>): Promise<string> => {
-          this.logger.log(`Tool call: clasificar_tipificacion(${JSON.stringify(args)})`);
-          const result = await this.functionsService.execute('clasificar_tipificacion', args);
+          this.logger.log(
+            `Tool call: clasificar_tipificacion(${JSON.stringify(args)})`,
+          );
+          const result = await this.functionsService.execute(
+            'clasificar_tipificacion',
+            args,
+          );
           try {
-            const parsed = JSON.parse(result);
+            const parsed = JSON.parse(result) as Record<string, unknown>;
             if (parsed.clasificado) {
               Object.assign(collectedData, {
                 tipification1: parsed.categoria,
@@ -248,21 +276,29 @@ export class VoiceService implements OnModuleInit {
                 grupo_piloto: parsed.grupo_piloto,
                 grupo_estandar: parsed.grupo_estandar,
               });
-              const desc = (args as Record<string, unknown>).descripcion_problema;
+              const desc = args.descripcion_problema;
               if (desc) {
                 collectedData.descripcion = desc;
                 collectedData.description = desc;
               }
-              this.logger.log(`[${tag}] Collected classification: ${JSON.stringify(collectedData)}`);
+              this.logger.log(
+                `[${tag}] Collected classification: ${JSON.stringify(collectedData)}`,
+              );
             }
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
           return result;
         },
       });
 
       // Build a factory that creates a new Agent pointing to any xAI Support Agent.
       // Used both for the initial agent and for live transfers.
-      const buildAgent = (agentUrl: string, agentTools: llm.ToolContext, instructions?: string) => {
+      const buildAgent = (
+        agentUrl: string,
+        agentTools: llm.ToolContext,
+        instructions?: string,
+      ) => {
         const m = new openai.realtime.beta.RealtimeModel({
           baseURL: agentUrl,
           apiKey: this.apiKey,
@@ -295,16 +331,22 @@ export class VoiceService implements OnModuleInit {
           'Transfiere la conversación a un agente especializado según la categoría. Incluye TODOS los datos ya recopilados.',
         parameters: z
           .object({
-            categoria: z
-              .string()
-              .optional()
-              .describe('Categoría del problema'),
+            categoria: z.string().optional().describe('Categoría del problema'),
             tipification1: z.string().optional().describe('Categoría'),
             tipification2: z.string().optional().describe('Subcategoría'),
             tipification3: z.string().optional().describe('Item'),
-            descripcion: z.string().optional().describe('Descripción del problema'),
-            codigo_centro: z.string().optional().describe('Código del centro escolar'),
-            nombre_centro: z.string().optional().describe('Nombre del centro escolar'),
+            descripcion: z
+              .string()
+              .optional()
+              .describe('Descripción del problema'),
+            codigo_centro: z
+              .string()
+              .optional()
+              .describe('Código del centro escolar'),
+            nombre_centro: z
+              .string()
+              .optional()
+              .describe('Nombre del centro escolar'),
             departamento: z.string().optional().describe('Departamento'),
             municipio: z.string().optional().describe('Municipio'),
             distrito: z.string().optional().describe('Distrito'),
@@ -326,7 +368,7 @@ export class VoiceService implements OnModuleInit {
             if (parsed.transferido && parsed.support_agent_id) {
               const newAgentId = parsed.support_agent_id as string;
               this.logger.log(
-                `[${tag}] Performing live agent swap → ${parsed.nombre_agente} (${newAgentId})`,
+                `[${tag}] Performing live agent swap → ${parsed.nombre_agente as string} (${newAgentId})`,
               );
 
               // Build new xAI Voice URL with the target agent's support_agent_id
@@ -342,26 +384,28 @@ export class VoiceService implements OnModuleInit {
 
               // Use collectedData (populated by tool wrappers) — reliable
               // regardless of what the xAI agent passes in args.
-              this.logger.log(`[${tag}] Transfer collectedData: ${JSON.stringify(collectedData)}`);
+              this.logger.log(
+                `[${tag}] Transfer collectedData: ${JSON.stringify(collectedData)}`,
+              );
 
               const transferInstructions = `${VOICE_INSTRUCTIONS}
 
 CONTEXTO DE LA TRANSFERENCIA — Usa estos datos tal cual al crear el ticket.
 NO los preguntes de nuevo ni intentes reclasificar:
-- tipification1: ${collectedData.tipification1 ?? 'no especificado'}
-- tipification2: ${collectedData.tipification2 ?? 'no especificado'}
-- tipification3: ${collectedData.tipification3 ?? 'no especificado'}
-- descripcion: ${collectedData.descripcion ?? 'no especificado'}
-- codigo_centro: ${collectedData.codigo_centro ?? 'pendiente'}
-- nombre_centro: ${collectedData.nombre_centro ?? 'pendiente'}
-- departamento: ${collectedData.departamento ?? 'pendiente'}
-- municipio: ${collectedData.municipio ?? 'pendiente'}
-- distrito: ${collectedData.distrito ?? 'pendiente'}
-- modalidad: ${collectedData.modalidad ?? 'pendiente'}
+- tipification1: ${(collectedData.tipification1 as string) ?? 'no especificado'}
+- tipification2: ${(collectedData.tipification2 as string) ?? 'no especificado'}
+- tipification3: ${(collectedData.tipification3 as string) ?? 'no especificado'}
+- descripcion: ${(collectedData.descripcion as string) ?? 'no especificado'}
+- codigo_centro: ${(collectedData.codigo_centro as string) ?? 'pendiente'}
+- nombre_centro: ${(collectedData.nombre_centro as string) ?? 'pendiente'}
+- departamento: ${(collectedData.departamento as string) ?? 'pendiente'}
+- municipio: ${(collectedData.municipio as string) ?? 'pendiente'}
+- distrito: ${(collectedData.distrito as string) ?? 'pendiente'}
+- modalidad: ${(collectedData.modalidad as string) ?? 'pendiente'}
 - telefono_solicitante: ${phoneNumber ?? 'pendiente'}
-- clasificacion: ${collectedData.clasificacion ?? ''}
-- estado_inicial: ${collectedData.estado_inicial ?? ''}
-- grupo_piloto: ${collectedData.grupo_piloto ?? ''}
+- clasificacion: ${(collectedData.clasificacion as string) ?? ''}
+- estado_inicial: ${(collectedData.estado_inicial as string) ?? ''}
+- grupo_piloto: ${(collectedData.grupo_piloto as string) ?? ''}
 
 Ya fuiste transferido como agente especializado. Recopila SOLO:
 1. Nombre del solicitante (nombre_solicitante)
@@ -378,35 +422,79 @@ Los datos de centro escolar y clasificación ya están precargados.
               // from collectedData so the ticket always has complete data.
               const newTools = this.createToolContext();
               newTools.crear_ticket_sdp = llm.tool({
-                description: 'Crea un ticket en el SDP. OBLIGATORIO pasar cada campo recopilado por separado (nombre_solicitante, nombre_docente, nip, nombre_estudiante, nie). Centro y clasificación se llenan automáticamente.',
-                parameters: z.object({
-                  nombre_solicitante: z.string().describe('OBLIGATORIO: Nombre completo de quien reporta'),
-                  nombre_docente: z.string().optional().describe('Nombre del docente involucrado — MUST pasar si fue recopilado'),
-                  nip: z.string().optional().describe('NIP del docente — MUST pasar si fue recopilado'),
-                  nombre_estudiante: z.string().optional().describe('Nombre del estudiante afectado — MUST pasar si fue recopilado'),
-                  nie: z.string().optional().describe('NIE del estudiante — MUST pasar si fue recopilado'),
-                }).passthrough(),
-                execute: async (ticketArgs: Record<string, unknown>): Promise<string> => {
+                description:
+                  'Crea un ticket en el SDP. OBLIGATORIO pasar cada campo recopilado por separado (nombre_solicitante, nombre_docente, nip, nombre_estudiante, nie). Centro y clasificación se llenan automáticamente.',
+                parameters: z
+                  .object({
+                    nombre_solicitante: z
+                      .string()
+                      .describe(
+                        'OBLIGATORIO: Nombre completo de quien reporta',
+                      ),
+                    nombre_docente: z
+                      .string()
+                      .optional()
+                      .describe(
+                        'Nombre del docente involucrado — MUST pasar si fue recopilado',
+                      ),
+                    nip: z
+                      .string()
+                      .optional()
+                      .describe(
+                        'NIP del docente — MUST pasar si fue recopilado',
+                      ),
+                    nombre_estudiante: z
+                      .string()
+                      .optional()
+                      .describe(
+                        'Nombre del estudiante afectado — MUST pasar si fue recopilado',
+                      ),
+                    nie: z
+                      .string()
+                      .optional()
+                      .describe(
+                        'NIE del estudiante — MUST pasar si fue recopilado',
+                      ),
+                  })
+                  .passthrough(),
+                execute: async (
+                  ticketArgs: Record<string, unknown>,
+                ): Promise<string> => {
                   // collectedData is the source of truth for fields our
                   // backend captured directly from tool results.  The agent
                   // may send garbage ("no disponible") or re-classify wrongly,
                   // so we lock those fields and reject placeholder values.
                   const merged: Record<string, unknown> = { ...collectedData };
                   const lockedKeys = new Set([
-                    'codigo_centro', 'nombre_centro', 'departamento',
-                    'municipio', 'distrito', 'modalidad',
-                    'tipification1', 'tipification2', 'tipification3',
-                    'clasificacion', 'estado_inicial', 'grupo_piloto',
-                    'grupo_estandar', 'descripcion', 'description',
-                    'telefono_solicitante', 'session_id',
+                    'codigo_centro',
+                    'nombre_centro',
+                    'departamento',
+                    'municipio',
+                    'distrito',
+                    'modalidad',
+                    'tipification1',
+                    'tipification2',
+                    'tipification3',
+                    'clasificacion',
+                    'estado_inicial',
+                    'grupo_piloto',
+                    'grupo_estandar',
+                    'descripcion',
+                    'description',
+                    'telefono_solicitante',
+                    'session_id',
                   ]);
                   const junk = new Set([
-                    'no disponible', 'no especificado', 'no proporcionado',
-                    'pendiente', 'n/a', 'no aplica',
+                    'no disponible',
+                    'no especificado',
+                    'no proporcionado',
+                    'pendiente',
+                    'n/a',
+                    'no aplica',
                   ]);
                   for (const [k, v] of Object.entries(ticketArgs)) {
                     if (v === undefined || v === null || v === '') continue;
-                    if (junk.has(String(v).toLowerCase().trim())) continue;
+                    if (junk.has((v as string).toLowerCase().trim())) continue;
                     if (lockedKeys.has(k) && merged[k] != null) continue;
                     merged[k] = v;
                   }
@@ -416,24 +504,39 @@ Los datos de centro escolar y clasificación ya están precargados.
                   // (because the Console tool schema lacks those params).
                   // Try to extract nombre_estudiante from the agent's description.
                   if (!merged.nombre_estudiante) {
-                    const agentDesc = String(ticketArgs.description ?? '');
-                    const m = agentDesc.match(/(?:estudiante|alumno|alumna)\s+(.+?)[\.\,\s]*$/i);
+                    const agentDesc = (ticketArgs.description as string) ?? '';
+                    const m = agentDesc.match(
+                      /(?:estudiante|alumno|alumna)\s+(.+?)[.,\s]*$/i,
+                    );
                     if (m) merged.nombre_estudiante = m[1].trim();
                   }
 
-                  this.logger.log(`[${tag}] Agent raw args: ${JSON.stringify(ticketArgs)}`);
-                  this.logger.log(`[${tag}] crear_ticket_sdp merged: ${JSON.stringify(merged)}`);
-                  return this.functionsService.execute('crear_ticket_sdp', merged);
+                  this.logger.log(
+                    `[${tag}] Agent raw args: ${JSON.stringify(ticketArgs)}`,
+                  );
+                  this.logger.log(
+                    `[${tag}] crear_ticket_sdp merged: ${JSON.stringify(merged)}`,
+                  );
+                  return this.functionsService.execute(
+                    'crear_ticket_sdp',
+                    merged,
+                  );
                 },
               });
 
-              const newAgent = buildAgent(newUrl, newTools, transferInstructions);
+              const newAgent = buildAgent(
+                newUrl,
+                newTools,
+                transferInstructions,
+              );
               session!.updateAgent(newAgent);
 
               this.logger.log(`[${tag}] Agent swap initiated`);
             }
           } catch (err) {
-            this.logger.warn(`[${tag}] Could not parse transfer result for agent swap: ${err}`);
+            this.logger.warn(
+              `[${tag}] Could not parse transfer result for agent swap: ${String(err)}`,
+            );
           }
 
           return result;
@@ -446,13 +549,17 @@ Los datos de centro escolar y clasificación ya están precargados.
       // Debug event listeners
       const Events = voice.AgentSessionEventTypes;
       session.on(Events.AgentStateChanged, (ev) => {
-        this.logger.log(`[${tag}] Agent state: ${ev.oldState} → ${ev.newState}`);
+        this.logger.log(
+          `[${tag}] Agent state: ${ev.oldState} → ${ev.newState}`,
+        );
       });
       session.on(Events.UserStateChanged, (ev) => {
         this.logger.log(`[${tag}] User state: ${ev.oldState} → ${ev.newState}`);
       });
       session.on(Events.Error, (ev) => {
-        this.logger.error(`[${tag}] Agent error: ${(ev.error as Error)?.message ?? ev}`);
+        this.logger.error(
+          `[${tag}] Agent error: ${(ev.error as Error)?.message ?? JSON.stringify(ev)}`,
+        );
       });
       session.on(Events.Close, () => {
         this.logger.log(`[${tag}] AgentSession closed event`);
@@ -471,8 +578,11 @@ Los datos de centro escolar y clasificación ya están precargados.
         dtmfBuffer = '';
         this.logger.log(`[${tag}] DTMF digits received: ${digits}`);
         // Inject the digits into the realtime conversation
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const realtimeSession = (session as any)?.activity?.realtimeSession;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (realtimeSession?.sendEvent) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
           realtimeSession.sendEvent({
             type: 'conversation.item.create',
             item: {
@@ -481,9 +591,12 @@ Los datos de centro escolar y clasificación ya están precargados.
               content: [{ type: 'input_text', text: digits }],
             },
           });
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
           realtimeSession.sendEvent({ type: 'response.create' });
         } else {
-          this.logger.warn(`[${tag}] Cannot inject DTMF — realtimeSession not available`);
+          this.logger.warn(
+            `[${tag}] Cannot inject DTMF — realtimeSession not available`,
+          );
         }
       };
 
@@ -496,6 +609,7 @@ Los datos de centro escolar y clasificación ya están precargados.
 
       await session.start({
         agent,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         room: room as any,
         inputOptions: {
           participantIdentity: sipParticipant.identity,
@@ -506,12 +620,14 @@ Los datos de centro escolar y clasificación ya están precargados.
       // ── Step 5: Wait for the call to end ─────────────────────────────────
       await this.waitForDisconnect(room, sipParticipant);
     } catch (error) {
-      this.logger.error(`[${tag}] Session error: ${error}`);
+      this.logger.error(`[${tag}] Session error: ${String(error)}`);
     } finally {
       // Close the RealtimeSession's WebSocket to xAI.
       // Without this, xAI keeps sending responses every ~5 s after hangup.
       try {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const rs = (session as any)?.activity?.realtimeSession;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         if (rs?.close) await rs.close();
       } catch {
         /* ignore — session may already be closed */
@@ -560,13 +676,10 @@ Los datos de centro escolar y clasificación ya están precargados.
     participant: RemoteParticipant,
     tag: string,
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       // Check if already subscribed
       for (const pub of participant.trackPublications.values()) {
-        if (
-          pub.source === TrackSource.SOURCE_MICROPHONE &&
-          pub.track
-        ) {
+        if (pub.source === TrackSource.SOURCE_MICROPHONE && pub.track) {
           this.logger.log(`[${tag}] Audio track already subscribed`);
           resolve();
           return;
@@ -574,7 +687,9 @@ Los datos de centro escolar y clasificación ya están precargados.
       }
 
       const timeout = setTimeout(() => {
-        this.logger.warn(`[${tag}] Timeout waiting for audio track subscription`);
+        this.logger.warn(
+          `[${tag}] Timeout waiting for audio track subscription`,
+        );
         // Resolve anyway — the agent library will subscribe via its own listener
         resolve();
       }, 10_000);
@@ -603,14 +718,11 @@ Los datos de centro escolar y clasificación ya están precargados.
     sipParticipant: RemoteParticipant,
   ): Promise<void> {
     return new Promise((resolve) => {
-      room.on(
-        RoomEvent.ParticipantDisconnected,
-        (p: RemoteParticipant) => {
-          if (p.identity === sipParticipant.identity) {
-            resolve();
-          }
-        },
-      );
+      room.on(RoomEvent.ParticipantDisconnected, (p: RemoteParticipant) => {
+        if (p.identity === sipParticipant.identity) {
+          resolve();
+        }
+      });
       room.on(RoomEvent.Disconnected, () => resolve());
     });
   }
@@ -634,8 +746,7 @@ Los datos de centro escolar y clasificación ya están precargados.
 
     return {
       verificar_centro_escolar: llm.tool({
-        description:
-          'Verifica si existe un centro escolar por código o nombre',
+        description: 'Verifica si existe un centro escolar por código o nombre',
         parameters: z
           .object({
             codigo_centro: z
@@ -696,35 +807,23 @@ Los datos de centro escolar y clasificación ya están precargados.
           'Transfiere la conversación a un agente especializado según la categoría',
         parameters: z
           .object({
-            categoria: z
-              .string()
-              .optional()
-              .describe('Categoría del problema'),
+            categoria: z.string().optional().describe('Categoría del problema'),
           })
           .passthrough(),
         execute: exec('transferir_a_agente_especializado'),
       }),
 
-      escalar_operador_humano: llm.tool({
-        description:
-          'Escala la conversación a un operador humano cuando el agente no puede resolver',
-        parameters: z
-          .object({
-            motivo: z
-              .string()
-              .optional()
-              .describe('Motivo de la escalación'),
-          })
-          .passthrough(),
-        execute: exec('escalar_operador_humano'),
-      }),
-
       end_call: llm.tool({
         description: 'Finaliza la llamada telefónica',
         parameters: z.object({}).passthrough(),
-        execute: async (): Promise<string> => {
+        execute: (): Promise<string> => {
           this.logger.log('Tool call: end_call()');
-          return JSON.stringify({ success: true, mensaje: 'Llamada finalizada' });
+          return Promise.resolve(
+            JSON.stringify({
+              success: true,
+              mensaje: 'Llamada finalizada',
+            }),
+          );
         },
       }),
     };

@@ -9,4 +9,4 @@ import { AgentesEspecializadosService } from './agentes-especializados.service.j
   providers: [AgentesEspecializadosRepository, AgentesEspecializadosService],
   exports: [AgentesEspecializadosService],
 })
-export class AgentesEspecializadosModule { }
+export class AgentesEspecializadosModule {}

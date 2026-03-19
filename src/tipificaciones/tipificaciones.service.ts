@@ -38,9 +38,7 @@ export class TipificacionesService {
     }
 
     // 2. Fallback: LLM-based classification
-    this.logger.log(
-      'Keyword matching failed, usando clasificación por LLM...',
-    );
+    this.logger.log('Keyword matching failed, usando clasificación por LLM...');
     return this.clasificarConLLM(descripcion);
   }
 
@@ -95,7 +93,9 @@ Número de la opción más apropiada:`;
         ),
       );
 
-      const choice = response.data?.choices?.[0]?.message?.content?.trim();
+      const choice = (
+        response.data as { choices?: { message?: { content?: string } }[] }
+      )?.choices?.[0]?.message?.content?.trim();
       this.logger.log(`LLM classification response: "${choice}"`);
 
       // Extract the number from the response

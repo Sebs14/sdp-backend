@@ -5,22 +5,17 @@ import { AgentesEspecializadosService } from '../agentes-especializados/agentes-
 export class TransferirAgenteService {
   private readonly logger = new Logger(TransferirAgenteService.name);
 
-  constructor(
-    private readonly agentesService: AgentesEspecializadosService,
-  ) { }
+  constructor(private readonly agentesService: AgentesEspecializadosService) {}
 
   async execute(args: Record<string, unknown>): Promise<string> {
-    const payload =
-      (args.payload as Record<string, unknown>) ?? args;
+    const payload = (args.payload as Record<string, unknown>) ?? args;
 
     const tipification1 =
       (payload.tipification1 as string) ??
       (payload.categoria as string) ??
       'no especificado';
 
-    this.logger.log(
-      `Buscando agente especializado para: ${tipification1}`,
-    );
+    this.logger.log(`Buscando agente especializado para: ${tipification1}`);
 
     const agente = await this.agentesService.findByTipification1(tipification1);
 
@@ -30,7 +25,7 @@ export class TransferirAgenteService {
       );
       return JSON.stringify({
         transferido: false,
-        mensaje: `No se encontró agente especializado para "${tipification1}". Se requiere escalar a operador humano.`,
+        mensaje: `No se encontró agente especializado para "${tipification1}".`,
       });
     }
 

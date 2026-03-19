@@ -48,10 +48,7 @@ export class SessionService {
    * Merge new data into the accumulated case data for this session.
    * Used to store centro escolar info, classification, user details, etc.
    */
-  mergeCaseData(
-    sessionId: string,
-    data: Record<string, unknown>,
-  ): void {
+  mergeCaseData(sessionId: string, data: Record<string, unknown>): void {
     const existing = this.caseData.get(sessionId) ?? {};
     const merged = { ...existing, ...data };
     this.caseData.set(sessionId, merged);

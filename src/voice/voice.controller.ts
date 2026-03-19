@@ -1,10 +1,5 @@
 import { Controller, Get, Logger, Post, Req, Res } from '@nestjs/common';
-import {
-  ApiBody,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { VoiceService } from './voice.service.js';
 
@@ -20,7 +15,7 @@ import { VoiceService } from './voice.service.js';
 export class VoiceController {
   private readonly logger = new Logger(VoiceController.name);
 
-  constructor(private readonly voiceService: VoiceService) { }
+  constructor(private readonly voiceService: VoiceService) {}
 
   @Post('webhook')
   @ApiOperation({
@@ -84,12 +79,17 @@ para unirse a la sala y hacer el bridge de audio con la IA.
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Payload inválido o token faltante' })
-  async webhook(@Req() req: Request, @Res() res: Response): Promise<void> {
+  @ApiResponse({
+    status: 400,
+    description: 'Payload inválido o token faltante',
+  })
+  webhook(@Req() req: Request, @Res() res: Response): void {
     this.logger.log('Incoming call webhook');
 
     try {
-      const payload = this.voiceService.parseWebhookPayload(req.body);
+      const payload = this.voiceService.parseWebhookPayload(
+        req.body as Record<string, unknown>,
+      );
 
       this.logger.log(`  Phone Number    : ${payload.phoneNumber}`);
       this.logger.log(`  Conversation ID : ${payload.conversationId}`);
@@ -116,13 +116,13 @@ para unirse a la sala y hacer el bridge de audio con la IA.
       });
 
       // Spawn voice session (fire-and-forget)
-      this.voiceService.handleVoiceSession(payload).catch((err) => {
+      this.voiceService.handleVoiceSession(payload).catch((err: unknown) => {
         this.logger.error(
-          `Voice session error [${payload.conversationId}]: ${err}`,
+          `Voice session error [${payload.conversationId}]: ${String(err)}`,
         );
       });
     } catch (error) {
-      this.logger.error(`Failed to parse webhook: ${error}`);
+      this.logger.error(`Failed to parse webhook: ${String(error)}`);
       res.status(400).json({ status: 'error', message: 'invalid payload' });
     }
   }

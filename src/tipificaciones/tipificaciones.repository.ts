@@ -8,7 +8,7 @@ export class TipificacionesRepository {
   constructor(
     @InjectRepository(Tipificacion)
     private readonly repo: Repository<Tipificacion>,
-  ) { }
+  ) {}
 
   async findAll(): Promise<Tipificacion[]> {
     return this.repo.find({ where: { activo: true } });
@@ -19,13 +19,36 @@ export class TipificacionesRepository {
     const all = await this.repo.find({ where: { activo: true } });
     const desc = descripcion.toLowerCase();
 
+    let bestTip: Tipificacion | null = null;
+    let bestScore = 0;
+    let tiedCount = 0;
+
     for (const tip of all) {
-      const matched = tip.keywords.some((kw) =>
-        desc.includes(kw.toLowerCase()),
-      );
-      if (matched) return tip;
+      let score = 0;
+      for (const kw of tip.keywords) {
+        const kwLower = kw.toLowerCase();
+        if (desc.includes(kwLower)) {
+          // Longer keywords are more specific, so weight by length
+          score += kwLower.length;
+        }
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestTip = tip;
+        tiedCount = 1;
+      } else if (score === bestScore && score > 0) {
+        tiedCount++;
+      }
     }
-    return null;
+
+    // When multiple entries tie for best score, the match is ambiguous
+    // (usually means only shared category-level keywords matched).
+    // Return null so the LLM classifier can make a more accurate decision.
+    if (bestScore === 0 || tiedCount > 1) {
+      return null;
+    }
+
+    return bestTip;
   }
 
   async findByTipificacion(

@@ -27,7 +27,7 @@ export class ServiceDeskService {
 
     const inputData = {
       request: {
-        subject: `${datos.tipification1 ?? ''} - ${datos.tipification2 ?? ''}`,
+        subject: `${(datos.tipification1 as string) ?? ''} - ${(datos.tipification2 as string) ?? ''}`,
         description: datos.description ?? '',
         requester: { name: datos.codigo_centro ?? '' },
         status: { name: 'CM Creado' },

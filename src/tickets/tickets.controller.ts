@@ -23,7 +23,7 @@ import { SimularDistribucionDto } from './dto/simular-distribucion.dto.js';
 export class TicketsController {
   private readonly logger = new Logger(TicketsController.name);
 
-  constructor(private readonly ticketsService: TicketsService) { }
+  constructor(private readonly ticketsService: TicketsService) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar tickets paginados' })

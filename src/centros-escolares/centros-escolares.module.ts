@@ -11,4 +11,4 @@ import { CentrosEscolaresController } from './centros-escolares.controller.js';
   providers: [CentrosEscolaresRepository, CentrosEscolaresService],
   exports: [CentrosEscolaresService],
 })
-export class CentrosEscolaresModule { }
+export class CentrosEscolaresModule {}

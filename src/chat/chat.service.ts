@@ -21,7 +21,7 @@ export class ChatService {
     private readonly grokService: GrokService,
     private readonly sessionService: SessionService,
     private readonly functionsService: FunctionsService,
-  ) { }
+  ) {}
 
   /**
    * Convert internal history messages to xAI Support Agent format.
@@ -29,8 +29,7 @@ export class ChatService {
    * handled inline during the tool-call loop).
    */
   private toXaiFormat(msg: GrokMessage): SupportAgentMessage {
-    const role =
-      msg.role === 'user' ? 'ROLE_USER' : 'ROLE_ASSISTANT';
+    const role = msg.role === 'user' ? 'ROLE_USER' : 'ROLE_ASSISTANT';
     return {
       role,
       content: [{ text: msg.content ?? '' }],
@@ -60,7 +59,10 @@ export class ChatService {
     // Build conversation text
     const conversationText = history
       .filter((m) => m.role === 'user' || m.role === 'assistant')
-      .map((m) => `${m.role === 'user' ? 'Usuario' : 'Agente'}: ${m.content ?? ''}`)
+      .map(
+        (m) =>
+          `${m.role === 'user' ? 'Usuario' : 'Agente'}: ${m.content ?? ''}`,
+      )
       .join('\n');
 
     const systemPrompt = `Eres un extractor de datos estructurados. Dada una conversación entre un usuario y un agente del Sistema de Despacho de Problemas (SDP) del MINED El Salvador, extrae los siguientes campos.
@@ -90,7 +92,9 @@ REGLAS:
     );
 
     if (!result) {
-      this.logger.warn('LLM field extraction returned null — falling back to empty');
+      this.logger.warn(
+        'LLM field extraction returned null — falling back to empty',
+      );
       return {};
     }
 
@@ -98,15 +102,17 @@ REGLAS:
     const cleaned: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(result)) {
       if (value === null || value === 'null' || value === '') continue;
-      if (typeof value === 'string' && /^no\s+(disponible|tengo|aplica)/i.test(value)) continue;
+      if (
+        typeof value === 'string' &&
+        /^no\s+(disponible|tengo|aplica)/i.test(value)
+      )
+        continue;
       cleaned[key] = value;
     }
 
     this.logger.log(`LLM extracted fields: ${JSON.stringify(cleaned)}`);
     return cleaned;
   }
-
-
 
   async processMessage(
     sessionId: string | undefined,
@@ -174,9 +180,9 @@ REGLAS:
 
       // Build re-query messages: assistant entry + tool results
       const assistantContent = Array.isArray(agentMsg.content)
-        ? (agentMsg.content as Array<{ text: string }>).filter(
-          (item) => item.text?.trim(),
-        )
+        ? (agentMsg.content as Array<{ text: string }>).filter((item) =>
+            item.text?.trim(),
+          )
         : typeof agentMsg.content === 'string' && agentMsg.content.trim()
           ? [{ text: agentMsg.content }]
           : [];
@@ -193,9 +199,7 @@ REGLAS:
 
       for (const toolCall of toolCalls) {
         const fnName = toolCall.function.name;
-        this.logger.log(
-          `Raw tool_call: ${JSON.stringify(toolCall)}`,
-        );
+        this.logger.log(`Raw tool_call: ${JSON.stringify(toolCall)}`);
         let fnArgs: Record<string, unknown> = {};
         try {
           fnArgs = JSON.parse(toolCall.function.arguments || '{}') as Record<
@@ -203,9 +207,7 @@ REGLAS:
             unknown
           >;
         } catch {
-          this.logger.warn(
-            `Failed to parse tool arguments for ${fnName}`,
-          );
+          this.logger.warn(`Failed to parse tool arguments for ${fnName}`);
         }
 
         this.logger.log(`Executing tool: ${fnName}`);
@@ -272,10 +274,13 @@ REGLAS:
                 clasificacion: classResult.clasificacion,
                 estado_inicial: classResult.estado_inicial,
                 grupo_piloto: classResult.grupo_piloto,
-                description: fnArgs.descripcion_problema ?? fnArgs._user_message,
+                description:
+                  fnArgs.descripcion_problema ?? fnArgs._user_message,
               });
             }
-          } catch { /* ignore parse errors */ }
+          } catch {
+            /* ignore parse errors */
+          }
         }
 
         // Store verified centro escolar data
@@ -292,13 +297,18 @@ REGLAS:
                 modalidad: centroResult.modalidad,
               });
             }
-          } catch { /* ignore parse errors */ }
+          } catch {
+            /* ignore parse errors */
+          }
         }
 
         // Detect agent transfer — switch session to new agent
         if (fnName === 'transferir_a_agente_especializado') {
           try {
-            const transferResult = JSON.parse(result) as Record<string, unknown>;
+            const transferResult = JSON.parse(result) as Record<
+              string,
+              unknown
+            >;
             if (
               transferResult.transferido &&
               transferResult.support_agent_id &&
@@ -359,9 +369,63 @@ REGLAS:
           )
           .filter(Boolean);
 
+        // Include structured case data (tipificaciones + centro escolar)
+        const caseData = this.sessionService.getCaseData(sessionId);
+        const caseDataLines: string[] = [];
+        if (caseData.tipification1)
+          caseDataLines.push(
+            `- Categoría (tipification1): ${caseData.tipification1 as string}`,
+          );
+        if (caseData.tipification2)
+          caseDataLines.push(
+            `- Subcategoría (tipification2): ${caseData.tipification2 as string}`,
+          );
+        if (caseData.tipification3)
+          caseDataLines.push(
+            `- Item (tipification3): ${caseData.tipification3 as string}`,
+          );
+        if (caseData.clasificacion)
+          caseDataLines.push(
+            `- Clasificación: ${caseData.clasificacion as string}`,
+          );
+        if (caseData.estado_inicial)
+          caseDataLines.push(
+            `- Estado inicial: ${caseData.estado_inicial as string}`,
+          );
+        if (caseData.grupo_piloto)
+          caseDataLines.push(
+            `- Grupo piloto: ${caseData.grupo_piloto as string}`,
+          );
+        if (caseData.codigo_centro)
+          caseDataLines.push(
+            `- Código centro escolar: ${caseData.codigo_centro as string}`,
+          );
+        if (caseData.nombre_centro)
+          caseDataLines.push(
+            `- Nombre centro escolar: ${caseData.nombre_centro as string}`,
+          );
+        if (caseData.departamento)
+          caseDataLines.push(
+            `- Departamento: ${caseData.departamento as string}`,
+          );
+        if (caseData.municipio)
+          caseDataLines.push(`- Municipio: ${caseData.municipio as string}`);
+        if (caseData.distrito)
+          caseDataLines.push(`- Distrito: ${caseData.distrito as string}`);
+        if (caseData.description)
+          caseDataLines.push(
+            `- Descripción del problema: ${caseData.description as string}`,
+          );
+
+        const caseDataBlock =
+          caseDataLines.length > 0
+            ? `Datos del caso (tipificaciones y centro escolar):\n${caseDataLines.join('\n')}\n\n`
+            : '';
+
         const handoff =
           `[TRANSFERENCIA DE CASO]\n` +
           `Resumen de la conversación previa:\n${contextLines.join('\n')}\n\n` +
+          `${caseDataBlock}` +
           `Resultados de herramientas:\n${toolResultTexts.join('\n')}\n\n` +
           `INSTRUCCIONES IMPORTANTES PARA RECOPILAR DATOS:\n` +
           `- Preséntate brevemente y continúa atendiendo el caso.\n` +
@@ -375,9 +439,7 @@ REGLAS:
           `- NUNCA inventes datos que el usuario no proporcionó.\n` +
           `- Si algún dato no aplica al tipo de caso, omítelo y continúa con el siguiente.`;
 
-        reQueryMessages = [
-          { role: 'ROLE_USER', content: [{ text: handoff }] },
-        ];
+        reQueryMessages = [{ role: 'ROLE_USER', content: [{ text: handoff }] }];
       } else {
         reQueryMessages = requeueMessages;
       }

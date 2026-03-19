@@ -5,7 +5,7 @@ import { TicketsService } from '../tickets/tickets.service.js';
 export class CrearTicketService {
   private readonly logger = new Logger(CrearTicketService.name);
 
-  constructor(private readonly ticketsService: TicketsService) { }
+  constructor(private readonly ticketsService: TicketsService) {}
 
   async execute(args: Record<string, unknown>): Promise<string> {
     this.logger.log('Creando ticket en SDP');
@@ -17,11 +17,10 @@ export class CrearTicketService {
     const nombre = p.nombre_solicitante as string;
     const codigo = p.codigo_centro as string;
     const tip1 = p.tipification1 ?? p.categoria;
-    const desc = p.description ?? p.descripcion;
 
     if (!nombre || !codigo || !tip1) {
       this.logger.warn(
-        `Ticket missing required fields — nombre: ${nombre}, codigo: ${codigo}, tip1: ${tip1}`,
+        `Ticket missing required fields — nombre: ${nombre}, codigo: ${codigo}, tip1: ${String(tip1)}`,
       );
       return JSON.stringify({
         error: true,

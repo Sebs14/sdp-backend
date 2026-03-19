@@ -3,7 +3,6 @@ import { VerificarCentroService } from './verificar-centro.service.js';
 import { ClasificarTipificacionService } from './clasificar-tipificacion.service.js';
 import { CrearTicketService } from './crear-ticket.service.js';
 import { TransferirAgenteService } from './transferir-agente.service.js';
-import { EscalarHumanoService } from './escalar-humano.service.js';
 
 @Injectable()
 export class FunctionsService {
@@ -14,8 +13,7 @@ export class FunctionsService {
     private readonly clasificarTipificacion: ClasificarTipificacionService,
     private readonly crearTicket: CrearTicketService,
     private readonly transferirAgente: TransferirAgenteService,
-    private readonly escalarHumano: EscalarHumanoService,
-  ) { }
+  ) {}
 
   async execute(
     functionName: string,
@@ -35,9 +33,6 @@ export class FunctionsService {
 
       case 'transferir_a_agente_especializado':
         return this.transferirAgente.execute(args);
-
-      case 'escalar_operador_humano':
-        return this.escalarHumano.execute(args);
 
       default:
         this.logger.error(`Unknown function: ${functionName}`);

@@ -6,7 +6,7 @@ import { CentroEscolar } from './entities/centro-escolar.entity.js';
 export class CentrosEscolaresService {
   private readonly logger = new Logger(CentrosEscolaresService.name);
 
-  constructor(private readonly repository: CentrosEscolaresRepository) { }
+  constructor(private readonly repository: CentrosEscolaresRepository) {}
 
   async findAll(): Promise<CentroEscolar[]> {
     return this.repository.findAll();

@@ -7,7 +7,7 @@ export class VerificarCentroService {
 
   constructor(
     private readonly centrosEscolaresService: CentrosEscolaresService,
-  ) { }
+  ) {}
 
   async execute(args: Record<string, unknown>): Promise<string> {
     this.logger.log(`verificar_centro_escolar args: ${JSON.stringify(args)}`);
@@ -28,9 +28,8 @@ export class VerificarCentroService {
       (args._user_message as string) ??
       '';
     this.logger.log(`Verificando centro escolar: ${nombreOCodigo}`);
-    const resultado = await this.centrosEscolaresService.verificar(
-      nombreOCodigo,
-    );
+    const resultado =
+      await this.centrosEscolaresService.verificar(nombreOCodigo);
     return JSON.stringify(resultado);
   }
 }

@@ -8,10 +8,8 @@ export default () => ({
       process.env.XAI_SUPPORT_AGENT_CHAT_URL ||
       'https://api.x.ai/v1/support-agent/chat',
     completionsUrl:
-      process.env.XAI_COMPLETIONS_URL ||
-      'https://api.x.ai/v1/chat/completions',
-    extractionModel:
-      process.env.XAI_EXTRACTION_MODEL || 'grok-3-mini',
+      process.env.XAI_COMPLETIONS_URL || 'https://api.x.ai/v1/chat/completions',
+    extractionModel: process.env.XAI_EXTRACTION_MODEL || 'grok-3-mini',
     sessionUrl:
       process.env.XAI_SUPPORT_AGENT_SESSION_URL ||
       'https://api.x.ai/v1/support-agent/session',
@@ -20,8 +18,7 @@ export default () => ({
     livekitHost:
       process.env.LIVEKIT_HOST || 'wss://livekit-enterprise.grok.com',
     voiceApiUrl:
-      process.env.XAI_VOICE_API_URL ||
-      'wss://api.x.ai/v1/support-agent/voice',
+      process.env.XAI_VOICE_API_URL || 'wss://api.x.ai/v1/support-agent/voice',
   },
   database: {
     host: process.env.DB_HOST || 'localhost',
@@ -35,5 +32,8 @@ export default () => ({
       process.env.SERVICE_DESK_URL ||
       'https://atencion-mined-qa.goes.gob.sv/api/v3/requests',
     apiToken: process.env.SERVICE_DESK_TOKEN || '',
+  },
+  telegram: {
+    botToken: process.env.TELEGRAM_BOT_TOKEN || '',
   },
 });

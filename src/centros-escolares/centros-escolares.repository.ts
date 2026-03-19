@@ -16,7 +16,7 @@ export class CentrosEscolaresRepository {
   constructor(
     @InjectRepository(CentroEscolar)
     private readonly repo: Repository<CentroEscolar>,
-  ) { }
+  ) {}
 
   async findByCodigo(codigo: string): Promise<CentroEscolar | null> {
     return this.repo.findOne({ where: { codigo, activo: true } });
@@ -36,7 +36,16 @@ export class CentrosEscolaresRepository {
       .filter((w) => w.length > 2)
       .filter(
         (w) =>
-          !['centro', 'escolar', 'complejo', 'educativo', 'del', 'los', 'las', 'de'].includes(w),
+          ![
+            'centro',
+            'escolar',
+            'complejo',
+            'educativo',
+            'del',
+            'los',
+            'las',
+            'de',
+          ].includes(w),
       );
 
     if (words.length === 0) {

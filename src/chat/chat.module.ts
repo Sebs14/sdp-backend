@@ -11,4 +11,4 @@ import { FunctionsModule } from '../functions/functions.module.js';
   providers: [ChatService],
   exports: [ChatService],
 })
-export class ChatModule { }
+export class ChatModule {}

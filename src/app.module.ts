@@ -15,6 +15,7 @@ import { TipificacionesModule } from './tipificaciones/tipificaciones.module.js'
 import { AgenteEspecializado } from './agentes-especializados/entities/agente-especializado.entity.js';
 import { AgentesEspecializadosModule } from './agentes-especializados/agentes-especializados.module.js';
 import { VoiceModule } from './voice/voice.module.js';
+import { TelegramBotModule } from './telegram-bot/telegram-bot.module.js';
 
 @Module({
   imports: [
@@ -43,7 +44,8 @@ import { VoiceModule } from './voice/voice.module.js';
     TicketsModule,
     TipificacionesModule,
     AgentesEspecializadosModule,
+    TelegramBotModule,
     VoiceModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

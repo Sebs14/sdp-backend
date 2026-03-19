@@ -8,7 +8,7 @@ export class TicketsRepository {
   constructor(
     @InjectRepository(Ticket)
     private readonly repo: Repository<Ticket>,
-  ) { }
+  ) {}
 
   async save(ticket: Partial<Ticket>): Promise<Ticket> {
     const entity = this.repo.create(ticket);

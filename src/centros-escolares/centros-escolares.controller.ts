@@ -13,7 +13,7 @@ import { CentrosEscolaresService } from './centros-escolares.service.js';
 export class CentrosEscolaresController {
   private readonly logger = new Logger(CentrosEscolaresController.name);
 
-  constructor(private readonly centrosService: CentrosEscolaresService) { }
+  constructor(private readonly centrosService: CentrosEscolaresService) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar todos los centros escolares activos' })

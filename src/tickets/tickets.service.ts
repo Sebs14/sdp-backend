@@ -16,7 +16,7 @@ export class TicketsService {
     private readonly ticketsRepository: TicketsRepository,
     private readonly distributionRules: DistributionRulesService,
     private readonly serviceDeskService: ServiceDeskService,
-  ) { }
+  ) {}
 
   async crearTicket(datos: Record<string, unknown>): Promise<{
     ticket_id: string;

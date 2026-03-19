@@ -6,16 +6,12 @@ import { AgenteEspecializado } from './entities/agente-especializado.entity.js';
 export class AgentesEspecializadosService {
   private readonly logger = new Logger(AgentesEspecializadosService.name);
 
-  constructor(
-    private readonly repository: AgentesEspecializadosRepository,
-  ) { }
+  constructor(private readonly repository: AgentesEspecializadosRepository) {}
 
   async findByTipification1(
     tipification1: string,
   ): Promise<AgenteEspecializado | null> {
-    this.logger.debug(
-      `Buscando agente para tipification1: ${tipification1}`,
-    );
+    this.logger.debug(`Buscando agente para tipification1: ${tipification1}`);
     return this.repository.findByTipification1(tipification1);
   }
 

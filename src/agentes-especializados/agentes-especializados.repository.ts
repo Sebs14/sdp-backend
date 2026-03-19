@@ -8,7 +8,7 @@ export class AgentesEspecializadosRepository {
   constructor(
     @InjectRepository(AgenteEspecializado)
     private readonly repo: Repository<AgenteEspecializado>,
-  ) { }
+  ) {}
 
   async findByTipification1(
     tipification1: string,

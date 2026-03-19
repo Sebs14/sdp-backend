@@ -5,7 +5,7 @@ import { TipificacionesService } from '../tipificaciones/tipificaciones.service.
 export class ClasificarTipificacionService {
   private readonly logger = new Logger(ClasificarTipificacionService.name);
 
-  constructor(private readonly tipificacionesService: TipificacionesService) { }
+  constructor(private readonly tipificacionesService: TipificacionesService) {}
 
   async execute(args: Record<string, unknown>): Promise<string> {
     // The agent may use different field names, fall back to conversation context
@@ -19,9 +19,8 @@ export class ClasificarTipificacionService {
       '';
     this.logger.log(`Clasificando tipificación: ${descripcion}`);
 
-    const tip = await this.tipificacionesService.clasificarPorDescripcion(
-      descripcion,
-    );
+    const tip =
+      await this.tipificacionesService.clasificarPorDescripcion(descripcion);
 
     if (tip) {
       return JSON.stringify({

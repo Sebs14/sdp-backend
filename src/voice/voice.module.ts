@@ -8,4 +8,4 @@ import { FunctionsModule } from '../functions/functions.module.js';
   controllers: [VoiceController],
   providers: [VoiceService],
 })
-export class VoiceModule { }
+export class VoiceModule {}

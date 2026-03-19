@@ -11,7 +11,12 @@ import { ServiceDeskService } from './service-desk.service.js';
 @Module({
   imports: [TypeOrmModule.forFeature([Ticket]), HttpModule],
   controllers: [TicketsController],
-  providers: [TicketsRepository, TicketsService, DistributionRulesService, ServiceDeskService],
+  providers: [
+    TicketsRepository,
+    TicketsService,
+    DistributionRulesService,
+    ServiceDeskService,
+  ],
   exports: [TicketsService, DistributionRulesService],
 })
-export class TicketsModule { }
+export class TicketsModule {}

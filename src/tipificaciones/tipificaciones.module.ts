@@ -10,4 +10,4 @@ import { TipificacionesService } from './tipificaciones.service.js';
   providers: [TipificacionesRepository, TipificacionesService],
   exports: [TipificacionesService],
 })
-export class TipificacionesModule { }
+export class TipificacionesModule {}
