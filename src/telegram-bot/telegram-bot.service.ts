@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
+import { Markup } from 'telegraf';
 import { ChatService } from '../chat/chat.service.js';
 import { SessionService } from '../session/session.service.js';
 
@@ -17,6 +18,9 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 
   /** Mapea chatId de Telegram → sessionId interno del SDP */
   private readonly chatSessionMap = new Map<number, string>();
+
+  /** Mapea chatId de Telegram → teléfono compartido */
+  private readonly chatPhoneMap = new Map<number, string>();
 
   constructor(
     private readonly configService: ConfigService,
@@ -58,8 +62,12 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 
       await ctx.reply(
         '¡Bienvenido al Sistema de Despacho de Problemas (SDP) del MINED! 🏫\n\n' +
-        'Puedes escribirme tu consulta o problema y te ayudaré a canalizarlo.\n\n' +
+        'Para identificarte automáticamente, comparte tu número de teléfono con el botón de abajo, ' +
+        'o escribe directamente tu consulta.\n\n' +
         'Escribe /nueva para reiniciar la conversación en cualquier momento.',
+        Markup.keyboard([
+          Markup.button.contactRequest('📱 Compartir mi teléfono'),
+        ]).oneTime().resize(),
       );
     });
 
@@ -74,6 +82,49 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
       );
 
       await ctx.reply('Sesión reiniciada. ¿En qué puedo ayudarte?');
+    });
+
+    // Contacto compartido — almacena el teléfono para identificación
+    this.bot.on(message('contact'), async (ctx) => {
+      const chatId = ctx.chat.id;
+      const phone = ctx.message.contact.phone_number;
+
+      this.chatPhoneMap.set(chatId, phone);
+      this.logger.log(
+        `Teléfono recibido: chatId=${chatId}, phone=${phone}`,
+      );
+
+      // Process as first interaction with caller identification
+      let sessionId = this.chatSessionMap.get(chatId);
+      if (!sessionId) {
+        sessionId = this.sessionService.generateSessionId();
+        this.chatSessionMap.set(chatId, sessionId);
+      }
+
+      try {
+        await ctx.sendChatAction('typing');
+        const response = await this.chatService.processMessage(
+          sessionId,
+          'Hola, inicio sesión.',
+          phone,
+        );
+
+        const respText =
+          response.message || 'Gracias. ¿En qué puedo ayudarte?';
+        const chunks = this.splitMessage(respText, 4096);
+        for (const chunk of chunks) {
+          await ctx.reply(chunk, Markup.removeKeyboard());
+        }
+      } catch (error) {
+        this.logger.error(
+          `Error procesando contacto Telegram chatId=${chatId}`,
+          error,
+        );
+        await ctx.reply(
+          'Gracias por compartir tu número. ¿En qué puedo ayudarte?',
+          Markup.removeKeyboard(),
+        );
+      }
     });
 
     // Mensajes de texto — se procesan a través del ChatService existente
@@ -95,6 +146,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
         const response = await this.chatService.processMessage(
           sessionId,
           userMessage,
+          this.chatPhoneMap.get(chatId),
         );
 
         // Telegram tiene un límite de 4096 caracteres por mensaje

@@ -16,6 +16,8 @@ import { AgenteEspecializado } from './agentes-especializados/entities/agente-es
 import { AgentesEspecializadosModule } from './agentes-especializados/agentes-especializados.module.js';
 import { VoiceModule } from './voice/voice.module.js';
 import { TelegramBotModule } from './telegram-bot/telegram-bot.module.js';
+import { Usuario } from './usuarios/entities/usuario.entity.js';
+import { UsuariosModule } from './usuarios/usuarios.module.js';
 
 @Module({
   imports: [
@@ -32,7 +34,7 @@ import { TelegramBotModule } from './telegram-bot/telegram-bot.module.js';
         username: config.get<string>('database.username'),
         password: config.get<string>('database.password'),
         database: config.get<string>('database.database'),
-        entities: [CentroEscolar, Ticket, Tipificacion, AgenteEspecializado],
+        entities: [CentroEscolar, Ticket, Tipificacion, AgenteEspecializado, Usuario],
         synchronize: config.get<string>('nodeEnv') === 'development',
       }),
     }),
@@ -46,6 +48,7 @@ import { TelegramBotModule } from './telegram-bot/telegram-bot.module.js';
     AgentesEspecializadosModule,
     TelegramBotModule,
     VoiceModule,
+    UsuariosModule,
   ],
 })
 export class AppModule { }

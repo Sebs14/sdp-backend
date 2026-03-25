@@ -18,4 +18,13 @@ export class ChatMessageDto {
   @IsString()
   @IsNotEmpty({ message: 'El mensaje no puede estar vacío.' })
   message: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Teléfono del llamante (para identificación automática en producción)',
+    example: '7890-1234',
+  })
+  @IsOptional()
+  @IsString()
+  callerPhone?: string;
 }

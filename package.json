@@ -23,7 +23,8 @@
     "migration:revert": "pnpm run typeorm migration:revert",
     "seed": "ts-node -r tsconfig-paths/register src/database/seeds/centros-escolares.seed.ts",
     "seed:tipificaciones": "ts-node -r tsconfig-paths/register src/database/seeds/run-tipificaciones.seed.ts",
-    "seed:agentes": "ts-node -r tsconfig-paths/register src/database/seeds/run-agentes-especializados.seed.ts"
+    "seed:agentes": "ts-node -r tsconfig-paths/register src/database/seeds/run-agentes-especializados.seed.ts",
+    "seed:usuarios": "ts-node -r tsconfig-paths/register src/database/seeds/usuarios.seed.ts"
   },
   "dependencies": {
     "@livekit/agents": "^1.0.50",

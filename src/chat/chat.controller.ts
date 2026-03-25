@@ -24,7 +24,7 @@ export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly sessionService: SessionService,
-  ) {}
+  ) { }
 
   @Post()
   @HttpCode(HttpStatus.OK)
@@ -40,6 +40,7 @@ export class ChatController {
       return await this.chatService.processMessage(
         body.sessionId,
         body.message,
+        body.callerPhone,
       );
     } catch (error) {
       this.logger.error('Error processing chat message', error);

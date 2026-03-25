@@ -2,6 +2,8 @@ import { DataSource } from 'typeorm';
 import { CentroEscolar } from './src/centros-escolares/entities/centro-escolar.entity.js';
 import { Ticket } from './src/tickets/entities/ticket.entity.js';
 import { Tipificacion } from './src/tipificaciones/entities/tipificacion.entity.js';
+import { Usuario } from './src/usuarios/entities/usuario.entity.js';
+import { AddCentroEscolarColumns1710864000000 } from './src/migrations/1710864000000-AddCentroEscolarColumns.js';
 
 export default new DataSource({
   type: 'postgres',
@@ -10,6 +12,6 @@ export default new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_DATABASE || 'sdp_mined',
-  entities: [CentroEscolar, Ticket, Tipificacion],
-  migrations: ['dist/migrations/*.js'],
+  entities: [CentroEscolar, Ticket, Tipificacion, Usuario],
+  migrations: [AddCentroEscolarColumns1710864000000],
 });

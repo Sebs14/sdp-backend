@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { GrokService } from '../grok/grok.service.js';
 import { SessionService } from '../session/session.service.js';
 import { FunctionsService } from '../functions/functions.service.js';
+import { UsuariosService } from '../usuarios/usuarios.service.js';
 import {
   GrokMessage,
   SupportAgentMessage,
@@ -17,11 +19,18 @@ const FALLBACK_RESPONSE =
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
 
+  private readonly isProduction: boolean;
+
   constructor(
     private readonly grokService: GrokService,
     private readonly sessionService: SessionService,
     private readonly functionsService: FunctionsService,
-  ) { }
+    private readonly usuariosService: UsuariosService,
+    private readonly configService: ConfigService,
+  ) {
+    this.isProduction =
+      this.configService.get<string>('nodeEnv') === 'production';
+  }
 
   /**
    * Convert internal history messages to xAI Support Agent format.
@@ -117,6 +126,7 @@ REGLAS:
   async processMessage(
     sessionId: string | undefined,
     userMessage: string,
+    callerPhone?: string,
   ): Promise<ChatResponseDto> {
     // Generate session ID / conversation ID if not provided
     if (!sessionId) {
@@ -125,6 +135,54 @@ REGLAS:
 
     // 1. Get conversation history (internal format)
     const history = this.sessionService.getHistory(sessionId);
+
+    // Production-only: on first message, identify caller by phone
+    if (this.isProduction && callerPhone && history.length === 0) {
+      const identificacion =
+        await this.usuariosService.identificarPorTelefono(callerPhone);
+
+      if (identificacion.identificado) {
+        const usuario = identificacion.usuario as Record<string, unknown>;
+        const ce = identificacion.centro_escolar as Record<
+          string,
+          unknown
+        > | null;
+
+        this.logger.log(
+          `Caller identified: ${usuario.nombre} (${usuario.rol}) — ${ce?.nombre ?? 'sin CE'}`,
+        );
+
+        // Pre-fill case data
+        if (ce) {
+          this.sessionService.mergeCaseData(sessionId, {
+            codigo_centro: ce.codigo,
+            nombre_centro: ce.nombre,
+            departamento: ce.departamento,
+            municipio: ce.municipio,
+            distrito: ce.distrito,
+            modalidad: ce.modalidad,
+          });
+        }
+
+        // Inject context as a system-level user message so the agent
+        // knows who is calling and can confirm instead of asking
+        const ceInfo = ce
+          ? `Centro Escolar: ${ce.nombre} (código ${ce.codigo}), ${ce.municipio}, ${ce.departamento}.`
+          : 'Sin centro escolar asociado.';
+
+        const contextMsg =
+          `[CONTEXTO DEL SISTEMA — NO mostrar al usuario de manera literal]\n` +
+          `Se ha identificado al llamante por su número de teléfono.\n` +
+          `Nombre: ${usuario.nombre}\n` +
+          `Rol: ${usuario.rol}\n` +
+          `${ceInfo}\n` +
+          `INSTRUCCIÓN: Saluda al usuario por su nombre y confirma que llama desde su centro escolar. ` +
+          `Pide que confirme sus datos como capa de seguridad antes de continuar. ` +
+          `NO solicites datos que ya tienes — solo pide confirmación.`;
+
+        history.push({ role: 'user', content: contextMsg });
+      }
+    }
 
     // 2. Add user message to internal history
     history.push({ role: 'user', content: userMessage });
